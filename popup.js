@@ -1,3 +1,16 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js';
+import { getDatabase, ref, push, onValue, off } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCAVKFtScHljQ2Rb4Dqqq1RUAhlrjreHSg",
+  authDomain: "heartsformybabs.firebaseapp.com",
+  databaseURL: "https://heartsformybabs-default-rtdb.firebaseio.com",
+  projectId: "heartsformybabs",
+  storageBucket: "heartsformybabs.firebasestorage.app",
+  messagingSenderId: "736862456337",
+  appId: "1:736862456337:web:a3f4e3b912fcff7c09bfb0"
+};
+
 let database;
 let heartsRef;
 let currentCoupleId;
@@ -19,8 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize Firebase
   try {
-    const app = firebase.initializeApp(firebaseConfig);
-    database = firebase.database(app);
+    const app = initializeApp(firebaseConfig);
+    database = getDatabase(app);
     statusDiv.textContent = 'Firebase initialized';
   } catch (error) {
     statusDiv.textContent = 'Error: ' + error.message;
@@ -49,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   resetBtn.addEventListener('click', async () => {
     if (confirm('Reset everything? This will disconnect you.')) {
       if (heartsRef) {
-        firebase.database().ref(`couples/${currentCoupleId}/hearts`).off();
+        off(heartsRef);
       }
       await chrome.storage.local.clear();
       setupDiv.style.display = 'block';
@@ -86,10 +99,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function connectToFirebase(coupleId, userName) {
-    heartsRef = firebase.database().ref(`couples/${coupleId}/hearts`);
+    heartsRef = ref(database, `couples/${coupleId}/hearts`);
     
     // Listen for new hearts in real-time
-    heartsRef.on('value', (snapshot) => {
+    onValue(heartsRef, (snapshot) => {
       statusDiv.textContent = '✓ Connected';
       statusDiv.className = 'status connected';
       
@@ -119,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     try {
-      await heartsRef.push(heart);
+      await push(heartsRef, heart);
       
       sendBtn.textContent = '❤️ Sent!';
       setTimeout(() => {
@@ -136,9 +149,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function displayHistory(hearts, yourName) {
     historyDiv.innerHTML = '';
 
-    // Keep only last 50 hearts, show last 15
-    const recentHearts = hearts.slice(-50);
-    const displayHearts = recentHearts.slice(-15).reverse();
+    // Show last 15 hearts
+    const displayHearts = hearts.slice(-15).reverse();
     
     if (displayHearts.length === 0) {
       historyDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No hearts yet ❤️<br>Send one to get started!</div>';
@@ -157,13 +169,5 @@ document.addEventListener('DOMContentLoaded', async () => {
       div.textContent = `${isSent ? 'You' : heart.sender} sent ❤️ ${dateStr} ${timeStr}`;
       historyDiv.appendChild(div);
     });
-
-    // Clean up old hearts (keep last 50)
-    if (hearts.length > 50) {
-      const oldHearts = hearts.slice(0, hearts.length - 50);
-      oldHearts.forEach(heart => {
-        heartsRef.child(heart.id).remove();
-      });
-    }
   }
 });

@@ -17,7 +17,7 @@
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["firebase-app.js", "firebase-database.js", "content.js"],
+        "js": ["content.js"],
         "css": ["content.css"]
       }
     ],
@@ -28,11 +28,5 @@
       "16": "icon16.png",
       "48": "icon48.png",
       "128": "icon128.png"
-    },
-    "web_accessible_resources": [
-      {
-        "resources": ["firebase-app.js", "firebase-database.js"],
-        "matches": ["<all_urls>"]
-      }
-    ]
+    }
   }

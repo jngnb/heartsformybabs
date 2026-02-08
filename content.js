@@ -1,69 +1,58 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js';
+import { getDatabase, ref, onChildAdded, query, limitToLast } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCAVKFtScHljQ2Rb4Dqqq1RUAhlrjreHSg",
+  authDomain: "heartsformybabs.firebaseapp.com",
+  databaseURL: "https://heartsformybabs-default-rtdb.firebaseio.com",
+  projectId: "heartsformybabs",
+  storageBucket: "heartsformybabs.firebasestorage.app",
+  messagingSenderId: "736862456337",
+  appId: "1:736862456337:web:a3f4e3b912fcff7c09bfb0"
+};
+
 let heartElement = null;
 let heartTimeout = null;
-let database;
-let heartsRef;
-let isInitialized = false;
-
-// Initialize Firebase
-async function initializeFirebase() {
-  if (isInitialized) return;
-  
-  try {
-    const script1 = document.createElement('script');
-    script1.src = chrome.runtime.getURL('firebase-app.js');
-    document.head.appendChild(script1);
-    
-    await new Promise(resolve => script1.onload = resolve);
-    
-    const script2 = document.createElement('script');
-    script2.src = chrome.runtime.getURL('firebase-database.js');
-    document.head.appendChild(script2);
-    
-    await new Promise(resolve => script2.onload = resolve);
-    
-    // Load config
-    const configScript = document.createElement('script');
-    configScript.src = chrome.runtime.getURL('config.js');
-    document.head.appendChild(configScript);
-    
-    await new Promise(resolve => configScript.onload = resolve);
-    
-    const app = firebase.initializeApp(firebaseConfig);
-    database = firebase.database(app);
-    
-    isInitialized = true;
-    startListening();
-  } catch (error) {
-    console.error('Firebase init error:', error);
-  }
-}
+let isListening = false;
 
 async function startListening() {
+  if (isListening) return;
+  
   const stored = await chrome.storage.local.get(['yourName', 'coupleId']);
   
-  if (!stored.yourName || !stored.coupleId) return;
+  if (!stored.yourName || !stored.coupleId) {
+    setTimeout(startListening, 2000);
+    return;
+  }
   
-  heartsRef = firebase.database().ref(`couples/${stored.coupleId}/hearts`);
-  let lastHeartCount = 0;
-  
-  heartsRef.on('child_added', (snapshot) => {
-    const heart = snapshot.val();
+  try {
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const heartsRef = ref(database, `couples/${stored.coupleId}/hearts`);
+    const recentHeartsQuery = query(heartsRef, limitToLast(1));
     
-    // Skip initial load
-    if (lastHeartCount === 0) {
-      heartsRef.once('value', (s) => {
-        lastHeartCount = s.numChildren();
-      });
-      return;
-    }
+    let isFirstLoad = true;
     
-    lastHeartCount++;
+    onChildAdded(recentHeartsQuery, (snapshot) => {
+      // Skip the initial load
+      if (isFirstLoad) {
+        isFirstLoad = false;
+        return;
+      }
+      
+      const heart = snapshot.val();
+      
+      // Only show if from partner
+      if (heart.sender !== stored.yourName) {
+        showHeart(heart.sender);
+      }
+    });
     
-    // Only show if from partner
-    if (heart.sender !== stored.yourName) {
-      showHeart(heart.sender);
-    }
-  });
+    isListening = true;
+  } catch (error) {
+    console.error('Firebase error:', error);
+    setTimeout(startListening, 5000);
+  }
 }
 
 function showHeart(senderName) {
@@ -102,9 +91,9 @@ function showHeart(senderName) {
   }, 5 * 60 * 1000);
 }
 
-// Initialize when page loads
+// Start listening when page loads
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeFirebase);
+  document.addEventListener('DOMContentLoaded', startListening);
 } else {
-  initializeFirebase();
+  startListening();
 }
