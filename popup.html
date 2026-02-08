@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <style>
     body {
-      width: 300px;
+      width: 320px;
       padding: 20px;
       font-family: Arial, sans-serif;
     }
@@ -24,9 +25,13 @@
     .send-btn:active {
       transform: scale(0.95);
     }
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .history {
       margin-top: 20px;
-      max-height: 200px;
+      max-height: 250px;
       overflow-y: auto;
     }
     .history-item {
@@ -67,30 +72,83 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin-top: 5px;
     }
     .user-info {
       font-size: 12px;
       color: #666;
       margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .reset-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .reset-btn:hover {
+      background: #cc0000;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+    }
+    .status.connected {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .couple-id {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      margin-top: 5px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
   <div class="setup" id="setup">
-    <h3>Setup</h3>
+    <h3>Setup Your Couple Hearts ❤️</h3>
     <input type="text" id="yourName" placeholder="Your name">
     <input type="text" id="yourBabsName" placeholder="Your babs' name">
-    <button id="saveSetup">Save</button>
+    <input type="text" id="coupleId" placeholder="Couple ID (both use same ID)">
+    <button id="saveSetup">Save & Connect</button>
+    <div style="margin-top: 10px; font-size: 11px; color: #666;">
+      💡 Tip: Both of you need to use the exact same Couple ID to connect!
+    </div>
   </div>
   
   <div id="mainContent" style="display: none;">
-    <div class="user-info" id="userInfo"></div>
-    <button class="send-btn" id="sendHeart">💖 Send Heart</button>
+    <div class="user-info">
+      <span id="userInfo"></span>
+      <button class="reset-btn" id="resetBtn">Reset</button>
+    </div>
+    <button class="send-btn" id="sendHeart">❤️ Send Heart</button>
     
-    <h3>Recent Hearts to Your Babs</h3>
+    <div class="status" id="status">Connecting...</div>
+    <div class="couple-id" id="coupleIdDisplay"></div>
+    
+    <h3>Recent Hearts</h3>
     <div class="history" id="history"></div>
   </div>
 
+  <script src="firebase-app.js"></script>
+  <script src="firebase-database.js"></script>
+  <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
