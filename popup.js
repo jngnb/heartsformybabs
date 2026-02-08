@@ -19,100 +19,91 @@ const firebaseConfig = {
     const setupDiv = document.getElementById('setup');
     const mainContent = document.getElementById('mainContent');
     const saveSetupBtn = document.getElementById('saveSetup');
-    const yourNameInput = document.getElementById('yourName');
-    const yourBabsNameInput = document.getElementById('yourBabsName');
+    const whoAreYouSelect = document.getElementById('whoAreYou');
     const coupleIdInput = document.getElementById('coupleId');
     const userInfo = document.getElementById('userInfo');
     const resetBtn = document.getElementById('resetBtn');
     const statusDiv = document.getElementById('status');
     const coupleIdDisplay = document.getElementById('coupleIdDisplay');
   
-    console.log('Popup loaded');
-  
     // Initialize Firebase
     try {
       firebase.initializeApp(firebaseConfig);
       database = firebase.database();
       statusDiv.textContent = 'Firebase initialized';
-      console.log('Firebase initialized successfully');
     } catch (error) {
-      console.error('Firebase init error:', error);
       statusDiv.textContent = 'Error: ' + error.message;
       statusDiv.className = 'status error';
       return;
     }
   
     // Check if setup is complete
-    const stored = await chrome.storage.local.get(['yourName', 'yourBabsName', 'coupleId']);
-    console.log('Stored data:', stored);
+    const stored = await chrome.storage.local.get(['yourName', 'coupleId']);
     
-    if (stored.yourName && stored.yourBabsName && stored.coupleId) {
+    if (stored.yourName && stored.coupleId) {
+      const partnerName = stored.yourName === 'Babs' ? 'Missy' : 'Babs';
+      
       setupDiv.style.display = 'none';
       mainContent.style.display = 'block';
-      userInfo.textContent = `You: ${stored.yourName} ❤️ Babs: ${stored.yourBabsName}`;
+      userInfo.textContent = `You: ${stored.yourName} ❤️ Partner: ${partnerName}`;
       coupleIdDisplay.textContent = `Couple ID: ${stored.coupleId}`;
       currentCoupleId = stored.coupleId;
       currentUserName = stored.yourName;
       
       connectToFirebase(stored.coupleId, stored.yourName);
+      chrome.action.setBadgeText({ text: '' });
     } else {
       setupDiv.style.display = 'block';
       mainContent.style.display = 'none';
     }
   
-    // Reset button
     resetBtn.addEventListener('click', async () => {
-      if (confirm('Reset everything? This will disconnect you.')) {
-        if (heartsRef) {
-          heartsRef.off();
-        }
+      if (confirm('Reset everything?')) {
+        if (heartsRef) heartsRef.off();
         await chrome.storage.local.clear();
+        chrome.action.setBadgeText({ text: '' });
         setupDiv.style.display = 'block';
         mainContent.style.display = 'none';
-        yourNameInput.value = '';
-        yourBabsNameInput.value = '';
+        whoAreYouSelect.value = '';
         coupleIdInput.value = '';
       }
     });
   
     saveSetupBtn.addEventListener('click', async () => {
-      console.log('Save button clicked');
-      const yourNameValue = yourNameInput.value.trim();
-      const yourBabsNameValue = yourBabsNameInput.value.trim();
+      const yourName = whoAreYouSelect.value;
       const coupleIdValue = coupleIdInput.value.trim();
       
-      console.log('Values:', yourNameValue, yourBabsNameValue, coupleIdValue);
-      
-      if (yourNameValue && yourBabsNameValue && coupleIdValue) {
-        console.log('Saving to storage...');
-        await chrome.storage.local.set({ 
-          yourName: yourNameValue, 
-          yourBabsName: yourBabsNameValue,
-          coupleId: coupleIdValue
-        });
-        
-        console.log('Saved! Switching to main content...');
-        setupDiv.style.display = 'none';
-        mainContent.style.display = 'block';
-        userInfo.textContent = `You: ${yourNameValue} ❤️ Babs: ${yourBabsNameValue}`;
-        coupleIdDisplay.textContent = `Couple ID: ${coupleIdValue}`;
-        currentCoupleId = coupleIdValue;
-        currentUserName = yourNameValue;
-        
-        connectToFirebase(coupleIdValue, yourNameValue);
-      } else {
-        console.log('Missing fields');
-        alert('Please fill in all fields!');
+      if (!yourName) {
+        alert('Please select who you are!');
+        return;
       }
+      
+      if (!coupleIdValue) {
+        alert('Please enter a Couple ID!');
+        return;
+      }
+      
+      await chrome.storage.local.set({ 
+        yourName: yourName,
+        coupleId: coupleIdValue
+      });
+      
+      const yourBabsName = yourName === 'Babs' ? 'Missy' : 'Babs';
+      
+      setupDiv.style.display = 'none';
+      mainContent.style.display = 'block';
+      userInfo.textContent = `You: ${yourName} ❤️ Your Babs: ${yourBabsName}`;
+      coupleIdDisplay.textContent = `Couple ID: ${coupleIdValue}`;
+      currentCoupleId = coupleIdValue;
+      currentUserName = yourName;
+      
+      connectToFirebase(coupleIdValue, yourName);
     });
   
     function connectToFirebase(coupleId, userName) {
-      console.log('Connecting to Firebase with couple ID:', coupleId);
-      heartsRef = database.ref(`heartsformybabs/${coupleId}/hearts`);
+      heartsRef = database.ref(`couples/${coupleId}/hearts`);
       
-      // Listen for new hearts in real-time
       heartsRef.on('value', (snapshot) => {
-        console.log('Firebase data received');
         statusDiv.textContent = '✓ Connected';
         statusDiv.className = 'status connected';
         
@@ -124,10 +115,8 @@ const firebaseConfig = {
           });
         });
         
-        console.log('Hearts:', hearts);
         displayHistory(hearts, userName);
       }, (error) => {
-        console.error('Firebase connection error:', error);
         statusDiv.textContent = 'Connection error: ' + error.message;
         statusDiv.className = 'status error';
       });
@@ -136,7 +125,6 @@ const firebaseConfig = {
     sendBtn.addEventListener('click', async () => {
       if (!heartsRef) return;
       
-      console.log('Sending heart...');
       sendBtn.disabled = true;
       
       const heart = {
@@ -146,7 +134,6 @@ const firebaseConfig = {
   
       try {
         await heartsRef.push(heart);
-        console.log('Heart sent!');
         
         sendBtn.textContent = '❤️ Sent!';
         setTimeout(() => {
@@ -154,7 +141,6 @@ const firebaseConfig = {
           sendBtn.disabled = false;
         }, 1000);
       } catch (error) {
-        console.error('Send error:', error);
         statusDiv.textContent = 'Send error: ' + error.message;
         statusDiv.className = 'status error';
         sendBtn.disabled = false;
@@ -164,7 +150,6 @@ const firebaseConfig = {
     function displayHistory(hearts, yourName) {
       historyDiv.innerHTML = '';
   
-      // Show last 15 hearts
       const displayHearts = hearts.slice(-15).reverse();
       
       if (displayHearts.length === 0) {
@@ -178,8 +163,16 @@ const firebaseConfig = {
         div.className = `history-item ${isSent ? 'sent' : 'received'}`;
         
         const date = new Date(heart.timestamp);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        
+        const timeStr = date.toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const dateStr = date.toLocaleDateString([], { 
+          month: 'short', 
+          day: 'numeric' 
+        });
         
         div.textContent = `${isSent ? 'You' : heart.sender} sent ❤️ ${dateStr} ${timeStr}`;
         historyDiv.appendChild(div);
