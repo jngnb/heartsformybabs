@@ -1,0 +1,58 @@
+#couple-heart-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2147483647;
+    background: linear-gradient(135deg, #ff6b9d, #c06c84);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(255, 107, 157, 0.4);
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    font-family: Arial, sans-serif;
+  }
+  
+  #couple-heart-notification.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+  
+  .heart-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .heart-icon {
+    font-size: 24px;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  
+  .heart-text {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+  
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    10% {
+      transform: translateY(-5px) scale(1.05);
+    }
+    20% {
+      transform: translateY(0) scale(1);
+    }
+  }
