@@ -4,49 +4,103 @@
   <meta charset="UTF-8">
   <style>
     body {
-      width: 320px;
-      padding: 20px;
+      width: 200px;
+      padding: 10px;
       font-family: Arial, sans-serif;
     }
-    .send-btn {
-      width: 100%;
-      padding: 15px;
-      background: #ff6b9d; 
+    .send-container {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 10px;
+    }
+    .heart-btn {
+      width: 40px;
+      height: 40px;
+      background: #ff6b9d;
       border: none;
       border-radius: 10px;
       color: white;
-      font-size: 18px;
+      font-size: 30px;
       cursor: pointer;
       transition: transform 0.2s, background 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .send-btn:hover {
-      transform: scale(1.05);
+    .heart-btn:hover {
+      transform: scale(1.1);
       background: #ff5a8c;
     }
-    .send-btn:active {
+    .heart-btn:active {
       transform: scale(0.95);
     }
-    .send-btn:disabled {
+    .heart-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .message-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .message-input {
+      width: 100%;
+      padding: 6px;
+      border: 2px solid #ff6b9d;
+      border-radius: 10px;
+      font-size: 12px;
+      box-sizing: border-box;
+      resize: none;
+    }
+    .message-input:focus {
+      outline: none;
+      border-color: #ff5a8c;
+    }
+    .char-counter {
+      font-size: 10px;
+      color: #999;
+      text-align: right;
+      margin-top: 3px;
+    }
+    .char-counter.over-limit {
+      color: #ff4444;
+    }
+    .optional-label {
+      font-size: 10px;
+      color: #999;
+      margin-bottom: 3px;
+    }
     .history {
-      margin-top: 20px;
-      max-height: 250px;
+      margin-top: 10px;
+      max-height: 200px;
       overflow-y: auto;
     }
     .history-item {
-      padding: 8px;
+      padding: 6px;
       margin: 5px 0;
-      background: #f5f5f5;
-      border-radius: 5px;
-      font-size: 12px;
+      border-radius: 8px;
+      font-size: 13px;
     }
     .sent {
       background: #ffe6f0;
     }
     .received {
       background: #e6f3ff;
+    }
+    .heart-icon {
+      font-size: 18px;
+      margin-right: 5px;
+    }
+    .message-content {
+      font-style: italic;
+      color: #666;
+    }
+    .message-time {
+      font-size: 10px;
+      color: #999;
+      margin-top: 3px;
     }
     h3 {
       margin-top: 10px;
@@ -55,34 +109,37 @@
       color: #666;
     }
     .setup {
-      margin-bottom: 15px;
+      text-align: center;
+      padding: 20px 0;
     }
-    .setup select {
-      width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-sizing: border-box;
-      font-size: 14px;
+    .setup h2 {
+      color: #ff6b9d;
+      margin-bottom: 20px;
     }
     .setup input {
       width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #ff6b9d;
+      border-radius: 8px;
       box-sizing: border-box;
+      font-size: 16px;
+      text-align: center;
     }
     .setup button {
       width: 100%;
-      padding: 8px;
-      background: #4CAF50;
+      padding: 12px;
+      background: #ff6b9d;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      margin-top: 5px;
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .setup button:hover {
+      background: #ff5a8c;
     }
     .user-info {
       font-size: 12px;
@@ -91,6 +148,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+    .reset-btn-container {
+      position: relative;
+      display: inline-block;
     }
     .reset-btn {
       padding: 4px 8px;
@@ -103,6 +164,37 @@
     }
     .reset-btn:hover {
       background: #cc0000;
+    }
+    .tooltip {
+        visibility: hidden;
+        width: 200px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1;
+        top: 125%; /* Changed from bottom to top */
+        right: 0;
+        font-size: 11px;
+        line-height: 1.4;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .tooltip::after {
+        content: "";
+        position: absolute;
+        bottom: 100%; /* Changed from top to bottom */
+        right: 10px;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent transparent #333 transparent; /* Flipped arrow direction */
+    }
+    .reset-btn-container:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
     }
     .status {
       margin-top: 10px;
@@ -121,50 +213,34 @@
       background: #f8d7da;
       color: #721c24;
     }
-    .couple-id {
-      font-size: 10px;
-      color: #999;
-      text-align: center;
-      margin-top: 5px;
-      font-family: monospace;
-    }
-    label {
-      font-size: 12px;
-      color: #666;
-      margin-top: 10px;
-      display: block;
-    }
   </style>
 </head>
 <body>
   <div class="setup" id="setup">
-    <h3>Setup Your heartsformybabs ❤️</h3>
-    
-    <label>Who are you?</label>
-    <select id="whoAreYou">
-      <option value="">-- Choose --</option>
-      <option value="Babs">Babs</option>
-      <option value="Missy">Missy</option>
-    </select>
-    
-    <label>Couple ID (both use the same ID)</label>
-    <input type="text" id="coupleId" placeholder="e.g., babs-missy-2025">
-    
-    <button id="saveSetup">Save & Connect</button>
-    <div style="margin-top: 10px; font-size: 11px; color: #666;">
-      💡 Tip: Both of you need to use the exact same Couple ID!
-    </div>
+    <h2>❤️ heartsformybabs ❤️</h2>
+    <input type="text" id="yourName" placeholder="What's your name?">
+    <button id="saveSetup">Start</button>
   </div>
   
   <div id="mainContent" style="display: none;">
     <div class="user-info">
       <span id="userInfo"></span>
-      <button class="reset-btn" id="resetBtn">Reset</button>
+      <div class="reset-btn-container">
+        <button class="reset-btn" id="resetBtn">Clear All</button>
+        <span class="tooltip">⚠️ Warning: This will delete all hearts for everyone in the room!</span>
+      </div>
     </div>
-    <button class="send-btn" id="sendHeart">❤️ Send Heart</button>
+    
+    <div class="send-container">
+      <button class="heart-btn" id="sendHeart">❤️</button>
+      <div class="message-container">
+        <div class="optional-label">Optional message</div>
+        <input type="text" class="message-input" id="messageInput" placeholder="Add a message..." maxlength="10">
+        <div class="char-counter" id="charCounter">0/10</div>
+      </div>
+    </div>
     
     <div class="status" id="status">Connecting...</div>
-    <div class="couple-id" id="coupleIdDisplay"></div>
     
     <h3>Recent Hearts</h3>
     <div class="history" id="history"></div>
